@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+
+filter=(cat)
+
+if [ -t 1 ]; then
+    TPUT_FORCE=1
+    filter=(less -r)
+else
+    TPUT_DISABLE=1
+fi
+
+h1="$(tput sgr 0 1 0 0 0 1)"
+h2="$(tput sgr 0 1)"
+end="$(tput sgr0)"
+
+cat <<EOF | "${filter[@]}"
+${h1}Color Capabilities${end}
+
+tput setab [1-7] # Set a background colour using ANSI escape
+tput setb  [1-7] # Set a background colour
+tput setaf [1-7] # Set a foreground colour using ANSI escape
+tput setf  [1-7] # Set a foreground colour
+
+${h2}ANSI Colors${end}
+0 Black   $(tput setaf 0)Example${end} 
+1 Red     $(tput setaf 1)Example${end}
+2 Green   $(tput setaf 2)Example${end}
+3 Yellow  $(tput setaf 3)Example${end}
+4 Blue    $(tput setaf 4)Example${end}
+5 Purple  $(tput setaf 5)Example${end}
+6 Cyan    $(tput setaf 6)Example${end}
+7 Gray    $(tput setaf 7)Example${end}
+8 ???     $(tput setaf 8)Example${end}
+9 Default $(tput setaf 9)Example${end}
+
+${h1}Text Mode Capabilities${end}
+
+Using these may or may not disable other
+settings. See "SGR Combinations" below for
+a method of setting multiple flags.
+
+tput bold # Set bold mode            $(tput bold)Example${end}
+tput dim  # Turn on half-bright mode $(tput dim )Example${end}
+tput smul # Begin underline mode     $(tput smul)Example${end}
+tput rmul # Exit underline mode      $(tput rmul)Example${end}
+tput rev  # Turn on reverse mode     $(tput rev )Example${end}
+tput smso # Enter standout mode      $(tput smso)Example${end}
+tput rmso # Exit standout mode       $(tput rmso)Example${end}
+tput sgr0 # Turn off all attributes  $(tput sgr0)Example${end}
+
+${h1}SGR combinations${end}
+
+# Set 9 select SGR flags (0 to disable, non-zero to enable)....
+tput sgr 1 2 3 4 5 6 7 8 9
+
+${h2}Flags${end}
+tput sgr 1 0 0 0 0 0 0 0 0 # standout  $(tput sgr 1 0 0 0 0 0 0 0 0)Example${end}
+tput sgr 0 1 0 0 0 0 0 0 0 # underline $(tput sgr 0 1 0 0 0 0 0 0 0)Example${end}
+tput sgr 0 0 1 0 0 0 0 0 0 # reverse   $(tput sgr 0 0 1 0 0 0 0 0 0)Example${end}
+tput sgr 0 0 0 1 0 0 0 0 0 # blink     $(tput sgr 0 0 0 1 0 0 0 0 0)Example${end}
+tput sgr 0 0 0 0 1 0 0 0 0 # dim       $(tput sgr 0 0 0 0 1 0 0 0 0)Example${end}
+tput sgr 0 0 0 0 0 1 0 0 0 # bold      $(tput sgr 0 0 0 0 0 1 0 0 0)Example${end}
+tput sgr 0 0 0 0 0 0 1 0 0 # blank     $(tput sgr 0 0 0 0 0 0 1 0 0)Example${end}
+tput sgr 0 0 0 0 0 0 0 1 0 # protect   $(tput sgr 0 0 0 0 0 0 0 1 0)Example${end}
+tput sgr 0 0 0 0 0 0 0 0 1 # alternate character set
+
+${h2}Alternate Character Set Example${end}
+abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
+$(tput sgr 0 0 0 0 0 0 0 0 1)abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
+${end}
+${h1}Cursor Movement Capabilities${end}
+
+tput cup Y X # Move cursor to screen location X,Y (top left is 0,0)
+tput sc      # Save the cursor position
+tput rc      # Restore the cursor position
+tput lines   # Output the number of lines of the terminal
+tput cols    # Output the number of columns of the terminal
+tput cub N   # Move N characters left
+tput cuf N   # Move N characters right
+tput cub1    # move left one space
+tput cuf1    # non-destructive space (move right one space)
+tput cuu N   # up N lines
+tput cud N   # down N lines
+tput cuu1    # up one line
+tput cud1    # down one line
+tput ll      # last line, first column (if no cup)
+
+${h1}Clear and Insert Capabilities${end}
+
+tput ech N # Erase N characters
+tput clear # clear screen and home cursor
+tput el1   # Clear to beginning of line
+tput el    # clear to end of line
+tput ed    # clear to end of screen
+tput ich N # insert N characters (moves rest of line forward!)
+tput il N  # insert N lines
+EOF

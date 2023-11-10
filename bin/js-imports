@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+
+{
+    # Prefix each line with a line number for later sorting
+    awk '
+      BEGIN { FS="\t"; OFS=FS }
+
+      /^$/ { next }
+
+      { print sprintf("%04d", NR), $0 }'
+
+    # Output record format: <line_num> <line>
+} | {
+    # Reverse the input so the import path is on the first line for each import
+    tac
+    # Output record format: <line_num> <line>
+} | {
+    # Grouping: Prefix each line with an import statement ID
+    awk '
+      BEGIN { FS="\t"; OFS=FS; n=1000; }
+
+      /^import|[^"]*from[[:space:]]/ { n-=1 }
+
+      { print sprintf("%04d", n), $0 }
+    '
+    # Output record format: <import_id> <line_num> <line>
+} | {
+    # Windowing: Prefix each line with the import path from the corresponding import statement.
+    awk '
+      BEGIN { FS="\t"; OFS=FS }
+
+      $3 ~ /([^[:alnum:]])from[[:space:]]/ {
+        copy=$0;
+        sub(".*?from[[:space:]]+", "", copy);
+        path = copy;
+        type = "named"
+      }
+
+      $3 ~ /^import[[:space:]]+['\''"]/ {
+        copy=$0;
+        sub(".*?import[[:space:]]+", "", copy);
+        path = copy;
+        type = "effect"
+      }
+
+      { print path, type, $0 }
+    '
+    # Output record format: <path> <import_type> <import_id> <line_num> <line>
+} | {
+    # Prefix each line with the import path score.
+    # Side-effect imports are scored 1
+    # React paths are scored 2
+    # Other "bare name" paths are scored 3
+    # Decodable paths are scored 4
+    # Relative import paths are score as 1000 - the length of the [./]+ prefix,
+    awk '
+      BEGIN { FS="\t"; OFS=FS }
+
+      {
+        if ($2 == "effect") {
+           score = 1
+        } else if (match($1, "^.react")) {
+          score = 2
+        } else if (match($1, "^.decodable")) {
+          score = 4
+        } else if (match($1, "^.[./]+")) {
+          score = 1000 - RLENGTH
+        } else {
+          score = 3
+        }
+
+        # Drop the import type ($2)
+        print sprintf("%04d", score), $1, $3, $4, $5
+      }
+    '
+
+    # Output record format: <score> <path> <import_id> <line_num> <line>
+} | {
+    # Sort lexicographically by score + import path (the first 2 fields)
+    sort
+} | {
+    # Re-sequence the import IDs according to the sort order of the score & the import path.
+    # The new ordered import statement ID will replace the import path & unordered import ID)
+    awk '
+      BEGIN { FS="\t"; OFS=FS; prev_id="not a number"; ordered_id=0 }
+
+      {
+        next_id=$3;
+        if (next_id != prev_id) {
+           ordered_id+=1
+           prev_id=next_id
+        }
+        print $1, sprintf("%04d", ordered_id), $4, $5
+      }
+    '
+    # Output record format: <score> <ordered_import_id> <line_num> <line>
+ } | {
+    # With the final sorting key setup as the prefix on each record, perform the final sort
+    sort
+} | {
+    # Print the sorted results, with blank lines between chunks with different scores
+    awk '
+      BEGIN { FS="\t" }
+      {
+        if ($1 != prev_score) {
+          if (prev_score != 0 && prev_score <= 4) printf "\n";
+          prev_score=$1;
+        }
+        print $NF;
+      }
+    '
+}

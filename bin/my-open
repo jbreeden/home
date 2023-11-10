@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+function bin-present () {
+    type -t $1 &> /dev/null
+}
+
+if bin-present open
+then
+    open "$1"
+elif bin-present powershell.exe
+then
+    escaped="$(echo "$1" | sed "s/'/''/")"
+    powershell.exe -command "start '$escaped'"
+elif bin-present xdg-open
+then
+    xdg-open "$1"
+fi

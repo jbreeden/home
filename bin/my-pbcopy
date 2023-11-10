@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+# I just want to use the fucking clipboard.
+
+# For Mac: brew install reattach-to-user-namespace
+# For Ubuntu-like: sudo apt-get install xclip
+
+function bin-present () {
+    type -t $1 &> /dev/null
+}
+
+# Mac OSX
+if bin-present pbcopy
+then
+    if bin-present reattach-to-user-namespace
+    then
+        reattach-to-user-namespace pbcopy
+    else
+        pbcopy
+    fi
+# Windows WSL
+elif bin-present clip.exe
+then
+   clip.exe
+# Linux
+elif bin-present xclip
+then
+     xclip -i -selection clipboard
+fi

@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+git reflog HEAD | grep checkout: | grep -Eo '(\S+)$' | uniq

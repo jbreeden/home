@@ -1,0 +1,6 @@
+#!/usr/bin/env jq -Rr --unbuffered -f
+
+. as $raw
+| try ($raw | fromjson) catch {msg:$raw}
+| ((.stacktrace? // .stack_trace?) | strings) |= split("\n")
+| (.ts,.time,.timestamp,._time,.["@timestamp"]|numbers) |= (gmtime|strftime("%Y-%m-%dT%H:%M:%SZ"))

@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+
+# Fuzzy find any value by path in a JSON object.
+# Has some special logic for tagging k8s resources by metadata,
+# though the script works with arbitrary JSON.
+
+export jsonkv_bold=""
+export jsonkv_sgr0=""
+export jsonkv_height=20
+
+if tput bold &>/dev/null; then
+    jsonkv_bold="$(tput bold)"
+    jsonkv_sgr0="$(tput sgr0)"
+    jsonkv_height="$(tput lines)"
+fi
+
+function jsonkv-stream() {
+    jq --slurp -cr '
+      def tag_entry(field; f):
+        if ([.value|f]|any(.!=null)) then 
+           {key:"\(.key)[\(field)=\(.value|f|tostring)]", value}
+        else 
+          . 
+        end;
+
+      def tag_entries:
+        with_entries(
+          {key:(.key|tostring),value}
+          | tag_entry("ns"; .metadata?.namespace?)
+          | tag_entry("kind"; .kind? // .Kind?)
+          | tag_entry("id"; .id? // .ID? // .Id?)
+          | if (.key != "metadata") then 
+              tag_entry("name"; .name? // .Name? // .metadata?.name?) 
+            else
+              . 
+            end);
+
+      def tag_entries_recursive:
+        if ((type == "array") or (type == "object")) then
+          (tag_entries | with_entries({key,value:(.value?|tag_entries_recursive)}))
+        else
+          .
+        end;
+
+      # If we "slurped" just one object, ditch the wrapping array
+      if length == 1 then .[] else . end
+      | tag_entries_recursive
+      | . as $root
+      | tostream 
+      | select(length > 1)
+      | .[0] |= join("/")
+      | .[1] |= tojson
+    '
+}
+
+function jsonkv-select() {
+    IFS=$'\t' read -r presentation key value < <(
+        # Print stream tab-separated <key>=<value>\t<key>\t<value>
+        jq -r '"\(env.jsonkv_bold)\(.[0])\(env.jsonkv_sgr0) = \(.[1])\t\(.[0])\t\(.[1])"' |
+            fzf -e -1 --ansi \
+                -d '\t' \
+                --bind ctrl-k:kill-line \
+                --bind ctrl-v:page-down \
+                --bind alt-v:page-up \
+                --bind alt-n:preview-down \
+                --bind alt-p:preview-up \
+                --no-sort \
+                --with-nth 1 \
+                --height "$jsonkv_height" \
+                --preview "echo \"$jsonkv_bold\"{2}\"$jsonkv_sgr0\"; echo; jq -r . <<<{3}" \
+                --preview-window "down,wrap"
+    )
+
+    printf "$jsonkv_bold%s$jsonkv_sgr0\n" "$key" >&2
+    jq -r . <<<"$value"
+}
+
+function jsonkv() {
+    # If filenames are passed, they are concatenated onto stdin
+    cat "$@" | jsonkv-stream | jsonkv-select
+}
+
+# JSON decode the selected value
+if [[ "$0" == "$BASH_SOURCE" ]]; then
+    jsonkv "$@"
+fi
