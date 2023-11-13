@@ -1,3 +1,5 @@
+# This script wraps all existing compspecs with fzf.
+
 # HACK (copied from fzf):
 # We query the device status, after running fzf, via `printf '\e[5n'`.
 # The terminal reponds '\e0n' to indicate status ok.
@@ -65,20 +67,9 @@ function _fzf_complete() {
         return 0
     fi
 
-    _fzf_refine_compreply -q "$2"
+    _fzf_refine_compreply
     _fzf_complete_redraw_line
 }
-
-function _fzf_complete-I() {
-    COMPREPLY=()
-    while read -r line; do
-        [[ "$line" ]] && COMPREPLY+=( "$line" )
-    done < <( compgen -A command -A builtin -A function | grep -v '^[-_.:!]' | fgrep "$2" )
-    _fzf_refine_compreply -q "$2"
-    _fzf_complete_redraw_line
-}
-
-complete -I -F _fzf_complete-I
 
 . <(complete -p | awk '$0 !~ /\s(-E|-I)/{
   command = $NF
@@ -100,3 +91,14 @@ complete -I -F _fzf_complete-I
   print "function _fzf_complete_" command  "() { _fzf_complete " mode " " completer " \"" complete_opts "\" \"$@\"; }"
   print "complete -F _fzf_complete_" command " " command
 }')
+
+function _fzf_complete-I() {
+    COMPREPLY=()
+    while read -r line; do
+        [[ "$line" ]] && COMPREPLY+=( "$line" )
+    done < <( compgen -A command -A builtin -A function | grep -v '^[-_.:!]' | fgrep "$2" )
+    _fzf_refine_compreply -q "$2"
+    _fzf_complete_redraw_line
+}
+
+complete -I -F _fzf_complete-I

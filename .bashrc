@@ -45,10 +45,13 @@ if [[ "$-" == *i* ]]; then
     export PROMPT_DIRTRIM=4
     export PROMPT_COMMAND=prompt_cmd
 
+    # Note: nullglob was tempting, but breaks bash-completion,
+    # such that it can't filter completions correctly.
     shopt -s \
         cmdhist \
-        lithist \
-        histappend
+        histappend \
+        globstar \
+        extglob
 
     alias grep="grep --color=auto"
     alias less="less -R"
@@ -56,11 +59,6 @@ if [[ "$-" == *i* ]]; then
 
     bind -x '"\C-xr":source ~/.bashrc'
     bind -x '"\C-xm":man "${READLINE_LINE%% *}"'
-
-    type kubectl &>/dev/null && source <(kubectl completion bash)
-    type minikube &>/dev/null && source <(minikube completion bash)
-    type helm &>/dev/null && source <(helm completion bash)
-    type decodable &>/dev/null && source <(decodable completion bash)
 
     if type -t brew >&/dev/null; then
         brew_completions="$(brew --prefix)/etc/bash_completion"
@@ -71,8 +69,34 @@ if [[ "$-" == *i* ]]; then
         fi
     fi
 
+    type kubectl &>/dev/null && source <(kubectl completion bash)
+    type minikube &>/dev/null && source <(minikube completion bash)
+    type helm &>/dev/null && source <(helm completion bash)
+    type decodable &>/dev/null && source <(decodable completion bash)
+    type deno &>/dev/null && source <(deno completions bash)
+
+    # (Installed by 'pnpm install-completions')
+    # tabtab source for packages
+    # uninstall by removing these lines
+    [ -f ~/.config/tabtab/bash/__tabtab.bash ] && . ~/.config/tabtab/bash/__tabtab.bash || true
+
+
     [[ -r "/opt/homebrew/etc/profile.d/bash_completion.sh" ]] && . "/opt/homebrew/etc/profile.d/bash_completion.sh"
     [[ -r ~/.config/bash_completion/git-completion.bash ]] && . ~/.config/bash_completion/git-completion.bash
+
+    # FZF things
+    export FZF_DEFAULT_OPTS="--height=~50% --layout=reverse"
+
+    function _my_fzf_history () {
+        READLINE_LINE="$(
+          fc -rnl 1 $HISTSIZE |
+             grep -Eo '\S.*' |
+             fzf --no-sort -e -q "$READLINE_LINE"
+        )"
+        READLINE_POINT="${#READLINE_LINE}"
+    }
+    bind -x '"\C-r":_my_fzf_history'
+
     [[ -r ~/.fzf-completion.sh ]] && . ~/.fzf-completion.sh
 fi
 
