@@ -6,7 +6,7 @@
 !.bashrc
 !.bash_profile
 !.tmux.conf
-!.fzf-completion.sh
+!.fzf.cap.sh
 
 !.config
 .config/*

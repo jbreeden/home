@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if (( "${BASHRC_ONCE:=0}" == 0 )); then
     [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
@@ -85,19 +85,20 @@ if [[ "$-" == *i* ]]; then
     [[ -r ~/.config/bash_completion/git-completion.bash ]] && . ~/.config/bash_completion/git-completion.bash
 
     # FZF things
-    export FZF_DEFAULT_OPTS="--height=~50% --layout=reverse"
+    export FZF_DEFAULT_OPTS="--height=~50% --layout=reverse --bind=ctrl-k:kill-line,ctrl-v:page-down,alt-v:page-up"
 
     function _my_fzf_history () {
         READLINE_LINE="$(
           fc -rnl 1 $HISTSIZE |
              grep -Eo '\S.*' |
+             uniq |
              fzf --no-sort -e -q "$READLINE_LINE"
         )"
         READLINE_POINT="${#READLINE_LINE}"
     }
     bind -x '"\C-r":_my_fzf_history'
 
-    [[ -r ~/.fzf-completion.sh ]] && . ~/.fzf-completion.sh
+    [[ -r ~/.fzf.cap.sh ]] && . ~/.fzf.cap.sh
 fi
 
 function dj() {

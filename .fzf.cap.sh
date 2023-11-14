@@ -6,12 +6,12 @@
 # We bind this to redraw the current line.
 # https://www.cse.psu.edu/~kxc104/class/cmpen472/16s/hw/hw8/vt100ansi.htm
 bind '"\e[0n": redraw-current-line' 2> /dev/null
-function _fzf_complete_redraw_line() {
+function _fzf_cap_redraw_line() {
     printf '\e[5n'
 }
 
 # Processes COMPREPLY by prompting the user to select an option via fzf
-function _fzf_refine_compreply() {
+function _fzf_cap_refine_compreply() {
     local ORIG_COMPREPLY=( "${COMPREPLY[@]}" )
     COMPREPLY=()
     while read -r line; do
@@ -30,12 +30,12 @@ function _fzf_refine_compreply() {
     )
 }
 
-# Usage: _fzf_complete [(-F|-C) <original_completer>] <opt_string> [...<args>]
+# Usage: _fzf_cap [(-F|-C) <original_completer>] <opt_string> [...<args>]
 #
 # <args> should be passed in as with 'complete -F'.
 #
 # todo: process complete -o & -A options.
-function _fzf_complete() {
+function _fzf_cap() {
     local mode="$1"; shift
     COMPREPLY=()
 
@@ -67,8 +67,8 @@ function _fzf_complete() {
         return 0
     fi
 
-    _fzf_refine_compreply
-    _fzf_complete_redraw_line
+    _fzf_cap_refine_compreply
+    _fzf_cap_redraw_line
 }
 
 . <(complete -p | awk '$0 !~ /\s(-E|-I)/{
@@ -88,17 +88,17 @@ function _fzf_complete() {
     complete_opts = complete_opts " " $f
   }
 
-  print "function _fzf_complete_" command  "() { _fzf_complete " mode " " completer " \"" complete_opts "\" \"$@\"; }"
-  print "complete -F _fzf_complete_" command " " command
+  print "function _fzf_cap_" command  "() { _fzf_cap " mode " " completer " \"" complete_opts "\" \"$@\"; }"
+  print "complete -F _fzf_cap_" command " " command
 }')
 
-function _fzf_complete-I() {
+function _fzf_cap-I() {
     COMPREPLY=()
     while read -r line; do
         [[ "$line" ]] && COMPREPLY+=( "$line" )
     done < <( compgen -A command -A builtin -A function | grep -v '^[-_.:!]' | fgrep "$2" )
-    _fzf_refine_compreply -q "$2"
-    _fzf_complete_redraw_line
+    _fzf_cap_refine_compreply -q "$2"
+    _fzf_cap_redraw_line
 }
 
-complete -I -F _fzf_complete-I
+complete -I -F _fzf_cap-I
