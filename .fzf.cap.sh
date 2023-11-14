@@ -60,7 +60,7 @@ function _fzf_cap() {
     if [[ "${#COMPREPLY}" == 0 ]]; then
         while read -r line; do
             [[ "$line" ]] && COMPREPLY+=( "$line" )
-        done < <( compgen $opts )
+        done < <( compgen $opts "$2" )
     fi
 
     if [[ "${#COMPREPLY}" == 0 ]]; then
