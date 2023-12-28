@@ -1,5 +1,7 @@
 # This script wraps all existing compspecs with fzf.
 
+FZF_CAP_DEFAULT_OPTS="-0 -1 --height=~80% --layout=reverse"
+
 # HACK (copied from fzf):
 # We query the device status, after running fzf, via `printf '\e[5n'`.
 # The terminal reponds '\e0n' to indicate status ok.
@@ -15,6 +17,22 @@ function _fzf_cap_refine_compreply() {
     local ORIG_COMPREPLY=( "${COMPREPLY[@]}" )
     COMPREPLY=()
     while read -r line; do
+        # TODO: SPECIAL CASE FOR COBRA COMMANDS.
+        # They add description output when there are multiple matches,
+        # and omit them when there is only one match so the completion
+        # works as expected. Since we're refining the list with fzf
+        # we need to strip the description.
+        #
+        # This should probably be an option on a per-command basis,
+        # rather than a global default. This works for now, and in practice
+        # I don't expect to see many false positives. The description must
+        # be preceded by 2 spaces and enclosed in parens to match this regexp.
+        # We could further validate that all elements in COMPREPLY fit this
+        # criteria before applying this rule, but I've foregone this so far.
+        if [[ "$line" =~ (.*[^[:space:]])[[:space:]]*[[:space:]]{2}\(.*\)[[:space:]]*$ ]]; then
+            line="${BASH_REMATCH[1]}"
+        fi
+
         if [[ "$line" ]]; then
             if [[ -z "$COMPREPLY" ]]; then
                 COMPREPLY="$line"
@@ -26,7 +44,7 @@ function _fzf_cap_refine_compreply() {
         printf '%s\n' "${ORIG_COMPREPLY[@]}" |
             sort |
             uniq |
-            fzf -1 --height="~14" --layout=reverse "$@"
+            FZF_DEFAULT_OPTS="$FZF_CAP_DEFAULT_OPTS" fzf "$@"
     )
 }
 
@@ -58,6 +76,8 @@ function _fzf_cap() {
     esac
 
     if [[ "${#COMPREPLY}" == 0 ]]; then
+        printf '\e[s'
+        printf '\e[u'
         while read -r line; do
             [[ "$line" ]] && COMPREPLY+=( "$line" )
         done < <( compgen $opts "$2" )
@@ -95,10 +115,10 @@ function _fzf_cap() {
 function _fzf_cap-I() {
     COMPREPLY=()
     while read -r line; do
-        [[ "$line" ]] && COMPREPLY+=( "$line" )
-    done < <( compgen -A command -A builtin -A function | grep -v '^[-_.:!]' | fgrep "$2" )
+        COMPREPLY+=( "$line" )
+    done < <( compgen -A command -A builtin -A function -A file "$2")
     _fzf_cap_refine_compreply -q "$2"
     _fzf_cap_redraw_line
 }
 
-complete -I -F _fzf_cap-I
+complete -o filenames -I -F _fzf_cap-I
