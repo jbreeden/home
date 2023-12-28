@@ -1,27 +1,33 @@
 #!/usr/bin/env bash
 
-if (( "${BASHRC_ONCE:=0}" == 0 )); then
-    [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
-
-    export PATH="\
+export PATH="\
 $HOME/bin\
+:$HOME/.de-tools/bin\
+:$HOME/.cargo/bin
+:$HOME/bin\
 :/opt/homebrew/bin\
-:/usr/local/bin\
 :/usr/local/go/bin\
-:${PATH}"
+:/usr/local/bin\
+:/usr/bin\
+:/usr/sbin\
+:/bin\
+:/sbin\
+"
 
-    export CLICOLOR=1 # For ls on BSD (so, OSX)
-    export GOPATH="$HOME/go"
-    export GOPRIVATE="github.com/decodableco"
-    export EDITOR='emacs -nw'
-    export HISTFILESIZE=50000
-    export HISTSIZE=50000
+export AWS_PROFILE=dev
 
-    TERMINFO_GUESS1=/usr/share/terminfo
-    [ -f $TERMINFO_GUESS1 ] && export TERMINFO=$TERMINFO_GUESS1
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
-    export BASHRC_ONCE=1
-fi
+export CLICOLOR=1 # For ls on BSD (so, OSX)
+export GOFLAGS=-buildvcs=false
+export GOPATH="$HOME/go"
+export GOPRIVATE="github.com/decodableco"
+export EDITOR='emacs -nw'
+export HISTFILESIZE=50000
+export HISTSIZE=50000
+
+TERMINFO_GUESS1=/usr/share/terminfo
+[ -f $TERMINFO_GUESS1 ] && export TERMINFO=$TERMINFO_GUESS1
 
 # Interactive shells
 if [[ "$-" == *i* ]]; then
@@ -53,10 +59,6 @@ if [[ "$-" == *i* ]]; then
         globstar \
         extglob
 
-    alias grep="grep --color=auto"
-    alias less="less -R"
-    alias k=kubectl
-
     bind -x '"\C-xr":source ~/.bashrc'
     bind -x '"\C-xm":man "${READLINE_LINE%% *}"'
 
@@ -73,13 +75,16 @@ if [[ "$-" == *i* ]]; then
     type minikube &>/dev/null && source <(minikube completion bash)
     type helm &>/dev/null && source <(helm completion bash)
     type decodable &>/dev/null && source <(decodable completion bash)
+    type de-tools &>/dev/null && source <(de-tools completion bash)
     type deno &>/dev/null && source <(deno completions bash)
+
+    export BUN_INSTALL="$HOME/.bun"
+    export PATH="$BUN_INSTALL/bin:$PATH"
 
     # (Installed by 'pnpm install-completions')
     # tabtab source for packages
     # uninstall by removing these lines
     [ -f ~/.config/tabtab/bash/__tabtab.bash ] && . ~/.config/tabtab/bash/__tabtab.bash || true
-
 
     [[ -r "/opt/homebrew/etc/profile.d/bash_completion.sh" ]] && . "/opt/homebrew/etc/profile.d/bash_completion.sh"
     [[ -r ~/.config/bash_completion/git-completion.bash ]] && . ~/.config/bash_completion/git-completion.bash
@@ -99,6 +104,15 @@ if [[ "$-" == *i* ]]; then
     bind -x '"\C-r":_my_fzf_history'
 
     [[ -r ~/.fzf.cap.sh ]] && . ~/.fzf.cap.sh
+
+    alias grep="grep --color=auto"
+    alias less="less -R"
+    alias k=kubectl
+    complete -F _fzf_cap_kubectl k
+    complete -F _fzf_cap_decodable de
+    alias da=de-admin
+    alias dt=de-tools
+    eval "$(complete -p de-tools | sed 's/de-tools$/dt/')"
 fi
 
 function dj() {
