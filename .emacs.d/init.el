@@ -155,7 +155,6 @@
 (use-package ansi-color
     :hook (compilation-filter . ansi-color-compilation-filter))
 
-
 (use-package treesit
   :config
   (setq-default treesit-font-lock-level 4))
@@ -190,7 +189,8 @@
 (use-package exec-path-from-shell
   :ensure t
   :init
-  (setq-default exec-path-from-shell-shell-name "zsh")
+  (setq exec-path-from-shell-arguments nil)
+  (setq-default exec-path-from-shell-shell-name "bash")
   :config (exec-path-from-shell-initialize))
 
 (use-package spacemacs-theme
@@ -312,9 +312,6 @@
                       (magit-read-file "Find file"))))
       (find-file (concat (magit-toplevel) file)))))
 
-(use-package yaml-mode
-  :ensure t)
-
 (use-package go-mode
   :ensure t
   :init
@@ -392,7 +389,8 @@
           ; Prefer vanilla prettier over *-typescript to infer syntax from filename
           (typescript-mode . prettier)
           (web-mode . prettier)
-          (yaml-mode . prettier-yaml))))
+          (yaml-mode . prettier-yaml)
+          (yaml-ts-mode . prettier-yaml))))
 
 (use-package eslint-fix
   :ensure t
@@ -414,19 +412,44 @@
   (editorconfig-mode 1))
 
 (use-package yasnippet
-  :ensure t)
+  :ensure t
+  :config
+  (yas-global-mode t))
 
 (use-package yasnippet-snippets
   :ensure t)
 
+(defun bs()
+  (message "bs"))
+
+(use-package yaml-ts-mode
+  :hook ((yaml-ts-mode) . (lambda ()
+                            (setq-local indent-line-function 'bs))))
+
 (use-package eglot
   ;; :ensure t
-  :hook ((go-mode js-mode python-mode) . eglot-ensure)
+  :hook ((go-mode js-mode python-mode python-ts-mode tsx-ts-mode yaml-mode) . eglot-ensure)
   :bind* (("C-c a" . eglot-code-actions))
   :config
   (setq eglot-confirm-server-initiated-edits nil)
-  (add-to-list 'eglot-server-programs '(terraform-mode "terraform-lsp")))
 
+  ;; (add-to-list 'eglot-server-programs '(yaml-ts-mode . ("decodable-lsp" "--stdio")))
+  (add-to-list 'eglot-server-programs
+               '(yaml-mode . ("yaml-language-server" "--stdio")))
+  (add-to-list 'eglot-server-programs
+               '(yaml-ts-mode . ("yaml-language-server" "--stdio")))
+
+  (add-to-list 'eglot-server-programs '(terraform-mode "terraform-lsp"))
+
+  ;; ;; Why do you forsake me, Deno LSP?
+  ;; (add-to-list 'eglot-server-programs '((js-mode typescript-mode tsx-ts-mode) . (eglot-deno "deno" "lsp")))
+  ;; (defclass eglot-deno (eglot-lsp-server) ()
+  ;;   :documentation "A custom class for deno lsp.")
+  ;; (cl-defmethod eglot-initialization-options ((server eglot-deno))
+  ;;   "Passes through required deno initialization options"
+  ;;   (list :enable t
+  ;;   :lint t))
+  )
 
 (use-package eglot-java
   :ensure t
@@ -451,7 +474,11 @@
 
 (use-package git-link
   :defer 4
-  :ensure t)
+  :ensure t
+  :config
+  (defun my-git-link ()
+    (interactive)
+    ))
 
 (use-package multi-vterm
   :ensure t
@@ -496,3 +523,14 @@
   (magit-status (string-trim (shell-command-to-string (format "de-worktree %s 2> /dev/null" (shell-quote-argument branch-name))))))
 
 (put 'downcase-region 'disabled nil)
+
+
+(defun ad-pbcopy-on-kill (fun &rest args)
+  (interactive)
+  (message (int-to-string (length args)))
+  (when (and (region-active-p) (executable-find "pbcopy"))
+    (shell-command-on-region (region-beginning) (region-end) "pbcopy"))
+  (call-interactively fun))
+
+;; Advising kill-ring-save
+(advice-add 'kill-ring-save :around 'ad-pbcopy-on-kill)

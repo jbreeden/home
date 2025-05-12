@@ -2,8 +2,10 @@
 
 export PATH="\
 $HOME/bin\
+:$HOME/.tools/bin\
 :$HOME/.de-tools/bin\
-:$HOME/.cargo/bin
+:$HOME/.cargo/bin\
+:$HOME/go/bin\
 :$HOME/bin\
 :/opt/homebrew/bin\
 :/usr/local/go/bin\
@@ -29,6 +31,8 @@ export HISTSIZE=50000
 TERMINFO_GUESS1=/usr/share/terminfo
 [ -f $TERMINFO_GUESS1 ] && export TERMINFO=$TERMINFO_GUESS1
 
+[ -f ~/.decodable.bashrc ] && . ~/.decodable.bashrc
+
 # Interactive shells
 if [[ "$-" == *i* ]]; then
     prompt_cmd_once=0
@@ -44,6 +48,10 @@ if [[ "$-" == *i* ]]; then
         if [ "$git_ref" ]; then
             PS1+=" \[$(tput setaf 6)\]${git_ref}\[$(tput sgr0)\]"
         fi
+        if [ "$VIRTUAL_ENV" ]; then
+            PS1+=" \[$(tput setaf 3)\]$(basename $(dirname "${VIRTUAL_ENV}"))/$(basename "${VIRTUAL_ENV}")\[$(tput sgr0)\]"
+        fi
+
 
         PS1+='\n\[$(tput setaf $(( ${status:-0} == 0 ? 2 : 1 )) )\]❯ \[$(tput sgr0)\]'
     }
@@ -105,8 +113,12 @@ if [[ "$-" == *i* ]]; then
 
     [[ -r ~/.fzf.cap.sh ]] && . ~/.fzf.cap.sh
 
+    alias magit="emacs -nw -f magit-status"
     alias grep="grep --color=auto"
     alias less="less -R"
+    alias t=tmux
+    alias tf=terraform
+    complete -F _fzf_cap_tmux t
     alias k=kubectl
     complete -F _fzf_cap_kubectl k
     complete -F _fzf_cap_decodable de
@@ -117,10 +129,15 @@ fi
 
 function dj() {
     worktree=$(
-        find ~/decodable/repos/decodable.d -mindepth 1 -maxdepth 1 -type d |
+        cd ~/decodable/repos/decodable.d && ls -t |
+            fzf -f "$*" |
             fzf -1 -q "$*" --prompt "worktree: "
     )
+
     if [ "$worktree" ]; then
-        cd "$worktree"
+        cd "$HOME/decodable/repos/decodable.d/$worktree"
     fi
 }
+
+# Created by `pipx` on 2025-01-14 18:05:56
+export PATH="$PATH:/Users/jbreeden/.local/bin"
