@@ -3,8 +3,11 @@
 if (( "${BASHRC_ONCE:=0}" == 0 )); then
     [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
+    export NODE_NO_WARNINGS=1
+
     export PATH="\
 $HOME/bin\
+:$HOME/go/bin\
 :/opt/homebrew/bin\
 :/usr/local/bin\
 :/usr/local/go/bin\
@@ -12,10 +15,10 @@ $HOME/bin\
 
     export CLICOLOR=1 # For ls on BSD (so, OSX)
     export GOPATH="$HOME/go"
-    export GOPRIVATE="github.com/decodableco"
     export EDITOR='emacs -nw'
     export HISTFILESIZE=50000
     export HISTSIZE=50000
+    export HISTCONTROL=ignoreboth:erasedups
 
     TERMINFO_GUESS1=/usr/share/terminfo
     [ -f $TERMINFO_GUESS1 ] && export TERMINFO=$TERMINFO_GUESS1
@@ -25,6 +28,7 @@ fi
 
 # Interactive shells
 if [[ "$-" == *i* ]]; then
+    [[ -f ~/.secrets.sh ]] && source ~/.secrets.sh
     prompt_cmd_once=0
     function prompt_cmd()  {
         status="$?"
@@ -57,6 +61,11 @@ if [[ "$-" == *i* ]]; then
     alias less="less -R"
     alias k=kubectl
 
+    # Common ls aliases
+    alias ll='ls -l'
+    alias la='ls -a'
+    alias l='ls -CF'
+
     bind -x '"\C-xr":source ~/.bashrc'
     bind -x '"\C-xm":man "${READLINE_LINE%% *}"'
 
@@ -72,7 +81,6 @@ if [[ "$-" == *i* ]]; then
     type kubectl &>/dev/null && source <(kubectl completion bash)
     type minikube &>/dev/null && source <(minikube completion bash)
     type helm &>/dev/null && source <(helm completion bash)
-    type decodable &>/dev/null && source <(decodable completion bash)
     type deno &>/dev/null && source <(deno completions bash)
 
     # (Installed by 'pnpm install-completions')
@@ -101,12 +109,4 @@ if [[ "$-" == *i* ]]; then
     [[ -r ~/.fzf.cap.sh ]] && . ~/.fzf.cap.sh
 fi
 
-function dj() {
-    worktree=$(
-        find ~/decodable/repos/decodable.d -mindepth 1 -maxdepth 1 -type d |
-            fzf -1 -q "$*" --prompt "worktree: "
-    )
-    if [ "$worktree" ]; then
-        cd "$worktree"
-    fi
-}
+source /Users/jared/.docker/init-bash.sh || true # Added by Docker Desktop
