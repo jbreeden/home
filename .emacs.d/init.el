@@ -51,6 +51,7 @@
 (setq gc-cons-threshold (* 100 (expt 2 20))) ; 100MB
 (setq read-process-output-max (expt 2 20)) ; 1MB
 
+;; Re-enable commands that Emacs disables by default
 (put 'dired-find-alternate-file 'disabled nil)
 (put 'narrow-to-region 'disabled nil)
 (put 'scroll-left 'disabled nil)
@@ -225,6 +226,7 @@
 
 (use-package which-key
   :ensure t
+  :defer 0.5
   :init
   (setq-default which-key-idle-delay 0.3)
   :config
@@ -286,9 +288,10 @@
 
 (use-package company
   :ensure t
+  :defer 0.1
   :bind* (("C-c TAB" . company-complete))
   :config
-  (global-company-mode)
+  (add-hook 'after-init-hook 'global-company-mode)
   (setq-default company-async-timeout 6))
 
 (use-package magit
@@ -317,16 +320,6 @@
 
 (use-package go-mode
   :ensure t
-  :init
-
-  (setq gofmt-command "goimports")
-  (add-hook 'before-save-hook 'gofmt-before-save) ; todo: Not for every mode?
-
-  (defun goimports ()
-    (interactive)
-    (let ((gofmt-command "goimports"))
-      (gofmt)))
-
   :hook (go-mode . (lambda()
                      (interactive)
                      (setq-local tab-width 4))))
@@ -347,6 +340,8 @@
   :ensure t
   :config
   (apheleia-global-mode +1)
+  (add-to-list 'apheleia-formatters '(goimports ("goimports" "-w")))
+  (setf (alist-get 'go-mode apheleia-mode-alist) 'goimports)
   (setq apheleia-mode-alist
         '((php-mode . phpcs)
           (json-mode . prettier-json)
@@ -367,12 +362,10 @@
           (html-mode . prettier-html)
           (java-mode . google-java-format)
           (js3-mode . prettier-javascript)
-          ; Prefer vanilla prettier over *-javascript to infer syntax from filename
           (js-mode . prettier)
           (js-ts-mode . prettier)
           (typescript-ts-mode . prettier)
           (tsx-ts-mode . prettier)
-          (js-mode . prettier)
           (kotlin-mode . ktlint)
           (latex-mode . latexindent)
           (LaTeX-mode . latexindent)
@@ -381,7 +374,6 @@
           (nix-mode . nixfmt)
           (python-mode . black)
           (ruby-mode . prettier-ruby)
-          (rustic-mode . rustfmt)
           (rust-mode . rustfmt)
           (scss-mode . prettier-scss)
           (sh-mode . shfmt)
@@ -389,7 +381,6 @@
           (TeX-latex-mode . latexindent)
           (TeX-mode . latexindent)
           (tuareg-mode . ocamlformat)
-          ; Prefer vanilla prettier over *-typescript to infer syntax from filename
           (typescript-mode . prettier)
           (web-mode . prettier)
           (yaml-mode . prettier-yaml))))
@@ -425,7 +416,18 @@
   :bind* (("C-c a" . eglot-code-actions))
   :config
   (setq eglot-confirm-server-initiated-edits nil)
-  (add-to-list 'eglot-server-programs '(terraform-mode "terraform-lsp")))
+  (add-to-list 'eglot-server-programs '(terraform-mode "terraform-lsp"))
+
+  ;; ;; https://docs.deno.com/runtime/manual/getting_started/setup_your_environment#eglot
+  ;; (add-to-list 'eglot-server-programs '((js-mode typescript-mode tsx-mode js-ts-mode typescript-ts-mode tsx-ts-mode) . (eglot-deno "deno" "lsp")))
+  ;; (defclass eglot-deno (eglot-lsp-server) ()
+  ;;   :documentation "A custom class for deno lsp.")
+  ;; (cl-defmethod eglot-initialization-options ((server eglot-deno))
+  ;;   "Passes through required deno initialization options"
+  ;;   (list :enable t
+  ;;         :lint t))
+
+  )
 
 
 (use-package eglot-java
@@ -459,22 +461,9 @@
          ("C-c t d" . multi-vterm-dedicated-toggle)
          ("C-c t /" . multi-vterm-project)
          ("C-c t n" . multi-vterm-next)
-         ("C-c t p" . multi-vterm-next)))
+         ("C-c t p" . multi-vterm-previous)))
 
 (use-package fzf
-  :ensure t)
-
-(defun my-vterm-toggle ()
-  (interactive)
-  (vterm-toggle)
-  (rename-buffer (concat "*" (file-name-base (project-root (project-current))) "*")))
-
-(use-package tuareg
-  :defer
-  :ensure t)
-
-(use-package merlin
-  :defer
   :ensure t)
 
 (use-package jsdoc
