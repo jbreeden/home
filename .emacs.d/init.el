@@ -424,6 +424,7 @@
   :config
   (setq eglot-confirm-server-initiated-edits nil)
   (add-to-list 'eglot-server-programs '(terraform-mode "terraform-lsp"))
+  (add-hook 'eglot-managed-mode-hook (lambda () (eglot-inlay-hints-mode -1)))
 
   ;; ;; https://docs.deno.com/runtime/manual/getting_started/setup_your_environment#eglot
   ;; (add-to-list 'eglot-server-programs '((js-mode typescript-mode tsx-mode js-ts-mode typescript-ts-mode tsx-ts-mode) . (eglot-deno "deno" "lsp")))
