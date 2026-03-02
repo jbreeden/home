@@ -96,9 +96,11 @@ function _fzf_cap-I() {
     COMPREPLY=()
     while read -r line; do
         [[ "$line" ]] && COMPREPLY+=( "$line" )
-    done < <( compgen -A command -A builtin -A function | grep -v '^[-_.:!]' | fgrep "$2" )
-    _fzf_cap_refine_compreply -q "$2"
-    _fzf_cap_redraw_line
+    done < <(
+        compgen -A command -A builtin -A function -A alias -A directory "$2" | grep -v '^[-_:!]'
+    )
+    _fzf_cap_refine_compreply -q "$2" -0 && _fzf_cap_redraw_line
 }
 
-complete -I -F _fzf_cap-I
+# Completion handling for the initial (-I) word of a command
+complete -I -o filenames -o default -o bashdefault -F _fzf_cap-I
