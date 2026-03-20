@@ -3,7 +3,7 @@
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
-root="$PWD"
+repo="$PWD"
 
 function log () {
     echo "$@"
@@ -11,16 +11,15 @@ function log () {
 }
 
 git ls-files | grep -v install.sh | {
-    repo="$PWD"
     while read f; do
-	dir="$(dirname "$f")"
-	if [[ "$dir" != . ]]; then
-	    log mkdir -p "$HOME/$dir"
-	fi
+        dir="$(dirname "$f")"
+        if [[ "$dir" != . ]]; then
+            log mkdir -p "$HOME/$dir"
+        fi
         if [ "$repo/$f" -ef "$HOME/$f" ]; then
             rm "$HOME/$f"
         fi
-	log ln -sf --backup -T "$repo/$f" "$HOME/$f"
+        log ln -sf --backup -T "$repo/$f" "$HOME/$f"
     done
 }
 
