@@ -410,13 +410,6 @@
 (use-package yasnippet-snippets
   :ensure t)
 
-(defun bs()
-  (message "bs"))
-
-(use-package yaml-ts-mode
-  :hook ((yaml-ts-mode) . (lambda ()
-                            (setq-local indent-line-function 'bs))))
-
 (use-package eglot
   ;; :ensure t
   :hook ((go-mode js-mode python-mode python-ts-mode tsx-ts-mode yaml-mode) . eglot-ensure)
@@ -434,8 +427,6 @@
   ;;   "Passes through required deno initialization options"
   ;;   (list :enable t
   ;;         :lint t))
-
-  )
 
   ;; (add-to-list 'eglot-server-programs '(yaml-ts-mode . ("decodable-lsp" "--stdio")))
   (add-to-list 'eglot-server-programs
