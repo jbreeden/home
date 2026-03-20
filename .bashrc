@@ -65,6 +65,8 @@ if [[ "$-" == *i* ]]; then
         extglob
 
     alias grep="grep --color=auto"
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
     alias less="less -R"
     alias k=kubectl
 
@@ -76,13 +78,21 @@ if [[ "$-" == *i* ]]; then
     bind -x '"\C-xr":source ~/.bashrc'
     bind -x '"\C-xm":man "${READLINE_LINE%% *}"'
 
-    if type -t brew >&/dev/null; then
-        brew_completions="$(brew --prefix)/etc/bash_completion"
-        if [ -f "$brew_completions" ]; then
-            source "$brew_completions"
-        else
-            echo 'WARN: bash completions missing. Install with `brew install bash-completion`' >&2
-        fi
+    if ! shopt -oq posix; then
+	if [ -f /usr/share/bash-completion/bash_completion ]; then
+	    . /usr/share/bash-completion/bash_completion
+	elif [ -f /etc/bash_completion ]; then
+	    . /etc/bash_completion
+	fi
+
+	if type -t brew >&/dev/null; then
+            brew_completions="$(brew --prefix)/etc/bash_completion"
+            if [ -f "$brew_completions" ]; then
+		source "$brew_completions"
+            else
+		echo 'WARN: bash completions missing. Install with `brew install bash-completion`' >&2
+            fi
+	fi
     fi
 
     type kubectl &>/dev/null && source <(kubectl completion bash)
@@ -127,4 +137,27 @@ if [[ "$-" == *i* ]]; then
     complete -F _fzf_cap_kubectl k
 fi
 
-source /Users/jared/.docker/init-bash.sh || true # Added by Docker Desktop
+if test -f "$HOME"/.docker/init-bash.sh; then
+    source "$HOME"/.docker/init-bash.sh
+fi
+
+if test -f /home/jared/miniconda3/bin/conda; then
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+    __conda_setup="$('/home/jared/miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+    if [ $? -eq 0 ]; then
+	eval "$__conda_setup"
+    else
+	if [ -f "/home/jared/miniconda3/etc/profile.d/conda.sh" ]; then
+            . "/home/jared/miniconda3/etc/profile.d/conda.sh"
+	else
+            export PATH="/home/jared/miniconda3/bin:$PATH"
+	fi
+    fi
+    unset __conda_setup
+# <<< conda initialize <<<
+fi
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion

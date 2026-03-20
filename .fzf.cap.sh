@@ -97,6 +97,10 @@ function _fzf_cap() {
   completer = ""
   complete_opts = ""
 
+  if ( match(command, "[a-zA-Z][-_a-ZA-Z0-9]") == 0 ) {
+    next;
+  }
+
   for (f=2; f<NF; f++) {
     if ($f == "-F" || $f == "-C") {
       mode = $f
