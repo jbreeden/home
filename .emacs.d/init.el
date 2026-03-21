@@ -291,7 +291,7 @@
   :defer 0.1
   :bind* (("C-c TAB" . company-complete))
   :config
-  (add-hook 'after-init-hook 'global-company-mode)
+  (global-company-mode 1)
   (setq-default company-async-timeout 6))
 
 (use-package magit
@@ -416,7 +416,7 @@
   :bind* (("C-c a" . eglot-code-actions))
   :config
   (setq eglot-confirm-server-initiated-edits nil)
-  (add-to-list 'eglot-server-programs '(terraform-mode "terraform-lsp"))
+  ; (add-to-list 'eglot-server-programs '(terraform-mode "terraform-lsp"))
   (add-hook 'eglot-managed-mode-hook (lambda () (eglot-inlay-hints-mode -1)))
 
   ;; ;; https://docs.deno.com/runtime/manual/getting_started/setup_your_environment#eglot
