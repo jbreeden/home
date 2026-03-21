@@ -97,7 +97,7 @@ function _fzf_cap() {
   completer = ""
   complete_opts = ""
 
-  if ( match(command, "[a-zA-Z][-_a-ZA-Z0-9]") == 0 ) {
+  if ( ! match(command, "[a-zA-Z][-_a-ZA-Z0-9]") == 0 ) {
     next;
   }
 

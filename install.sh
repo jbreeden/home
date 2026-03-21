@@ -19,7 +19,7 @@ git ls-files | grep -v install.sh | {
         if [ "$repo/$f" -ef "$HOME/$f" ]; then
             rm "$HOME/$f"
         fi
-        log ln -sf --backup -T "$repo/$f" "$HOME/$f"
+        log ln -sf "$repo/$f" "$HOME/$f"
     done
 }
 
